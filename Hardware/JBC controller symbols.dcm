@@ -1,0 +1,8 @@
+EESchema-DOCLIB  Version 2.0
+#
+$CMP AD8538AR
+D TSOT-23-5 Low Power, Precision, Auto-Zero Op Amp
+K single opamp
+$ENDCMP
+#
+#End Doc Library
