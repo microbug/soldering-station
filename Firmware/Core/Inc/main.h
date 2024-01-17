@@ -30,6 +30,17 @@ extern "C" {
 /* Includes ------------------------------------------------------------------*/
 #include "stm32l0xx_hal.h"
 
+#include "stm32l0xx_ll_crs.h"
+#include "stm32l0xx_ll_rcc.h"
+#include "stm32l0xx_ll_bus.h"
+#include "stm32l0xx_ll_system.h"
+#include "stm32l0xx_ll_exti.h"
+#include "stm32l0xx_ll_cortex.h"
+#include "stm32l0xx_ll_utils.h"
+#include "stm32l0xx_ll_pwr.h"
+#include "stm32l0xx_ll_dma.h"
+#include "stm32l0xx_ll_gpio.h"
+
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 
@@ -50,8 +61,6 @@ extern "C" {
 
 /* USER CODE END EM */
 
-void HAL_TIM_MspPostInit(TIM_HandleTypeDef *htim);
-
 /* Exported functions prototypes ---------------------------------------------*/
 void Error_Handler(void);
 
@@ -60,22 +69,28 @@ void Error_Handler(void);
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
-#define BTN_ENTER_Pin GPIO_PIN_9
+#define BTN_ENTER_Pin LL_GPIO_PIN_9
 #define BTN_ENTER_GPIO_Port GPIOB
-#define BTN_MENU_Pin GPIO_PIN_14
+#define BTN_ENTER_EXTI_IRQn EXTI4_15_IRQn
+#define BTN_MENU_Pin LL_GPIO_PIN_14
 #define BTN_MENU_GPIO_Port GPIOC
-#define BTN_UP_Pin GPIO_PIN_15
+#define BTN_MENU_EXTI_IRQn EXTI4_15_IRQn
+#define BTN_UP_Pin LL_GPIO_PIN_15
 #define BTN_UP_GPIO_Port GPIOC
-#define TIP_TC_AMP_Pin GPIO_PIN_0
+#define BTN_UP_EXTI_IRQn EXTI4_15_IRQn
+#define TIP_TC_AMP_Pin LL_GPIO_PIN_0
 #define TIP_TC_AMP_GPIO_Port GPIOA
-#define HEATER_CURRENT_AMP_Pin GPIO_PIN_1
+#define HEATER_CURRENT_AMP_Pin LL_GPIO_PIN_1
 #define HEATER_CURRENT_AMP_GPIO_Port GPIOA
-#define TIP_ACTIVE_Pin GPIO_PIN_2
+#define TIP_ACTIVE_Pin LL_GPIO_PIN_2
 #define TIP_ACTIVE_GPIO_Port GPIOA
-#define TIP_PWM_Pin GPIO_PIN_5
+#define OC_TEST_Pin LL_GPIO_PIN_3
+#define OC_TEST_GPIO_Port GPIOA
+#define TIP_PWM_Pin LL_GPIO_PIN_5
 #define TIP_PWM_GPIO_Port GPIOA
-#define BTN_DOWN_Pin GPIO_PIN_1
+#define BTN_DOWN_Pin LL_GPIO_PIN_1
 #define BTN_DOWN_GPIO_Port GPIOB
+#define BTN_DOWN_EXTI_IRQn EXTI0_1_IRQn
 /* USER CODE BEGIN Private defines */
 
 /* USER CODE END Private defines */
