@@ -91,6 +91,7 @@ void Error_Handler(void);
 #define BTN_DOWN_Pin LL_GPIO_PIN_1
 #define BTN_DOWN_GPIO_Port GPIOB
 #define BTN_DOWN_EXTI_IRQn EXTI0_1_IRQn
+
 /* USER CODE BEGIN Private defines */
 
 /* USER CODE END Private defines */
@@ -100,5 +101,3 @@ void Error_Handler(void);
 #endif
 
 #endif /* __MAIN_H */
-
-/************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/
