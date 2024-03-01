@@ -7,6 +7,10 @@
 # FreeCAD
 *.FCBak
 
+# Eclipse/STM32CubeIDE
+*.cyclo
+Firmware/Debug/
+
 # From https://raw.githubusercontent.com/github/gitignore/master/C.gitignore
 # Prerequisites
 *.d

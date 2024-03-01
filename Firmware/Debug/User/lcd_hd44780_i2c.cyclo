@@ -1,8 +1,0 @@
-../User/lcd_hd44780_i2c.c:283:13:lcdWriteByte	1
-../User/lcd_hd44780_i2c.c:92:6:lcdCommand	23
-../User/lcd_hd44780_i2c.c:33:6:lcdInit	4
-../User/lcd_hd44780_i2c.c:207:6:lcdBacklight	1
-../User/lcd_hd44780_i2c.c:219:6:lcdSetCursorPosition	2
-../User/lcd_hd44780_i2c.c:237:6:lcdPrintStr	2
-../User/lcd_hd44780_i2c.c:247:6:lcdPrintChar	1
-../User/lcd_hd44780_i2c.c:262:6:lcdLoadCustomChar	3
