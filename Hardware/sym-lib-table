@@ -1,3 +1,5 @@
 (sym_lib_table
-  (lib (name "JBC controller symbols")(type Legacy)(uri "${KIPRJMOD}/JBC controller symbols.lib")(options "")(descr ""))
+  (version 7)
+  (lib (name "JBC controller symbols")(type "Legacy")(uri "${KIPRJMOD}/JBC controller symbols.lib")(options "")(descr ""))
+  (lib (name "JBC controller-rescue")(type "KiCad")(uri "${KIPRJMOD}/JBC controller-rescue.kicad_sym")(options "")(descr ""))
 )
