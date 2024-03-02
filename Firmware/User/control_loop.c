@@ -27,14 +27,16 @@ volatile uint32_t counter = 0;
 volatile float tip_temperature_degC = 0.0F;
 
 PIDData tip_pid = {
-	// const data
-	.k_p = 0.02F,
+	// Const data
+	.k_p = 0.03F,
 	.k_i = 0.01F,
-	.k_d = 0.005F,
-	.pid_window_degC = 50.0F,
+	.k_d = 0.01F,
+	.pid_window_degC = 100.0F,
 	.period_s = (float) TASK_PERIOD_CTRL_LOOP_MS / 1000.0F,
 
-	.setpoint_degC = 0.0F,
+	// Non-const data
+	.setpoint_degC = TIP_INITIAL_SETPOINT_DEGC,
+	// Must initialise these to 0
 	.integral_degCs = 0.0F,
 	.last_deltaT_degC = 0.0F
 };

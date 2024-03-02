@@ -41,13 +41,12 @@
  * - N=N_PWM + 20 take second current reading and temperature reading
  */
 
-volatile bool check_buttons_flag = false;
+volatile bool buttons_process_flag = false;
 volatile bool refresh_display_flag = false;
 
 void user_main(void) {
 	lcdInit(&hi2c1, 0x27, 2, 16);
-	char str[] = "SolderingStation";
-	lcdPrintStr(str);
+
 	HAL_TIM_Base_Start(&htim2);
 	HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_1);
 	HAL_TIM_OC_Start_IT(&htim2, TIM_CHANNEL_2);
@@ -56,13 +55,14 @@ void user_main(void) {
 
 	// Must be run before HAL_ADC_Start()
 	HAL_ADCEx_Calibration_Start(&hadc, ADC_SINGLE_ENDED);
+	HAL_Delay(1);  // Must allow 2 ADC clock cycles before starting
 
 	control_loop_init();
 
 	while (true) {
-		if (check_buttons_flag) {
-			check_buttons();
-			check_buttons_flag = false;
+		if (buttons_process_flag) {
+			buttons_process_debounced();
+			buttons_process_flag = false;
 		}
 		if (refresh_display_flag) {
 			refresh_display();
@@ -90,10 +90,11 @@ void user_systick_handler(void) {
 		control_loop_run();
 	}
 
+	// Runs every 1ms to handle debounce timers for buttons
 	button_debounce_handler();
 
 	if (HAL_GetTick() % TASK_PERIOD_CHECK_BUTTONS_MS == 0) {
-		check_buttons_flag = true;
+		buttons_process_flag = true;
 	}
 
 	if (HAL_GetTick() % TASK_PERIOD_REFRESH_DISPLAY_MS == 0) {

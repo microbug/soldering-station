@@ -21,10 +21,12 @@ typedef struct PIDData {
 } PIDData;
 
 #define TIP_PWM_MAX 499  // Max high cycles (zero indexed) of PWM counter
+#define TIP_INITIAL_SETPOINT_DEGC 350
 
 void control_loop_init(void);
 void control_loop_run(void);
 float run_pid(PIDData* data, float temp_degC);
+void ADC_DMA_TransferCompleteCallback(void);
 
 extern volatile float tip_temperature_degC;
 extern PIDData tip_pid;
