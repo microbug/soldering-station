@@ -11,6 +11,13 @@
 #include "user_main.h"
 #include "control_loop.h"
 #include "thermocouple.h"
+#include "util.h"
+
+#ifdef REPORT_TEMPERATURE_LPUART
+#include "usart.h"
+#include <string.h>
+#include <stdlib.h>
+#endif
 
 // Accurate within 20%
 #define DELAY_US(t) do {for(uint32_t delay_i = 0; delay_i < (t)*4; delay_i++) __asm__("NOP");} while (0);
@@ -26,11 +33,14 @@ volatile uint32_t counter = 0;
 
 volatile float tip_temperature_degC = 0.0F;
 
+// Tuned using Ziegler-Nichols method
+// Ku = 0.19, Tu = 1.33
+// PI controller, not PID
 PIDData tip_pid = {
 	// Const data
-	.k_p = 0.03F,
-	.k_i = 0.01F,
-	.k_d = 0.01F,
+	.k_p = 0.0855F,
+	.k_i = 0.0770F,
+
 	.pid_window_degC = 100.0F,
 	.period_s = (float) TASK_PERIOD_CTRL_LOOP_MS / 1000.0F,
 
@@ -38,7 +48,6 @@ PIDData tip_pid = {
 	.setpoint_degC = TIP_INITIAL_SETPOINT_DEGC,
 	// Must initialise these to 0
 	.integral_degCs = 0.0F,
-	.last_deltaT_degC = 0.0F
 };
 
 
@@ -65,6 +74,13 @@ void control_loop_run(void) {
 	tip_temperature_degC = tc_voltage_to_temperature(result_V);
 
 	float duty_cycle = run_pid(&tip_pid, tip_temperature_degC);
+
+	#ifdef REPORT_TEMPERATURE_LPUART
+		char buf[5];
+		itoa((10.0F*tip_temperature_degC)+0.5F, buf, 10);
+		print_lpuart(buf);
+		print_lpuart("\r\n");
+	#endif
 
 	__HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_1, duty_cycle * TIP_PWM_MAX);
 }
@@ -95,18 +111,22 @@ float run_pid(PIDData* data, float temp_degC) {
 		duty_cycle = 0.0F;
 		data->integral_degCs = 0.0F;
 	} else {  // Use PID control if abs(temp_degC) < pid_window_degC
-
-		// Run the PID loop
-		float derivative_degCps = (error_degC - data->last_deltaT_degC) / data->period_s;
+		// Run PI loop
 		data->integral_degCs += error_degC * data->period_s;
-		duty_cycle = data->k_p*error_degC + data->k_i*data->integral_degCs - data->k_d*derivative_degCps;
+		duty_cycle = data->k_p*error_degC + data->k_i*data->integral_degCs;
+#ifdef USE_PID_NOT_PI
+		// Optionally add derivative
+		float derivative_degCps = (error_degC - data->last_deltaT_degC) / data->period_s;
+		duty_cycle -= data->k_d*derivative_degCps;
+#endif
 
-		// Cap to 0.0F - 1.0F (inclusive)
+		// Cap output to 0.0F - 1.0F (inclusive)
 		duty_cycle = (duty_cycle < 1.0F) ? duty_cycle : 1.0F;
 		duty_cycle = (duty_cycle > 0.0F) ? duty_cycle : 0.0F;
 	}
+#ifdef USE_PID_NOT_PI
 	data->last_deltaT_degC = error_degC;
-
+#endif
 
 	return duty_cycle;
 }

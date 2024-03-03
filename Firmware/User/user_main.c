@@ -47,6 +47,9 @@ volatile bool refresh_display_flag = false;
 void user_main(void) {
 	lcdInit(&hi2c1, 0x27, 2, 16);
 
+#ifdef REPORT_TEMPERATURE_LPUART
+	LL_LPUART_Enable(LPUART1);
+#endif
 	HAL_TIM_Base_Start(&htim2);
 	HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_1);
 	HAL_TIM_OC_Start_IT(&htim2, TIM_CHANNEL_2);

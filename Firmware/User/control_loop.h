@@ -11,17 +11,27 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+// Uncomment to enable the full PID loop instead of PI
+// #define USE_PID_NOT_PI
+
 typedef struct PIDData {
-	const float k_p, k_i, k_d;
+	const float k_p, k_i;
 	const float period_s;  // Period between evalutions of PID loop
 	const float pid_window_degC;  // Temperature range (plus/minus about setpoint) in which the PID loop is active
+
 	volatile float setpoint_degC;
 	float integral_degCs;
+#ifdef USE_PID_NOT_PI
+	const float k_d;
 	float last_deltaT_degC;  // Used to calculate derivative
+#endif
 } PIDData;
 
 #define TIP_PWM_MAX 499  // Max high cycles (zero indexed) of PWM counter
 #define TIP_INITIAL_SETPOINT_DEGC 350
+
+// If defined, temperature is reported on LPUART1 PA4 9600 baud
+//#define REPORT_TEMPERATURE_LPUART
 
 void control_loop_init(void);
 void control_loop_run(void);
