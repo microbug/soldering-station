@@ -43,6 +43,9 @@
 
 volatile bool buttons_process_flag = false;
 volatile bool refresh_display_flag = false;
+volatile bool check_tip_active_flag = false;
+
+volatile bool tip_active = false;
 
 void user_main(void) {
 	lcdInit(&hi2c1, 0x27, 2, 16);
@@ -72,7 +75,31 @@ void user_main(void) {
 			refresh_display_flag = false;
 		}
 
+		if (check_tip_active_flag) {
+			check_tip_active();
+			check_tip_active_flag = false;
+		}
+
 		HAL_Delay(1);
+	}
+}
+
+void check_tip_active(void) {
+	static float last_active_setpoint;
+
+	// Tip active is active high (placing tip in stand pulls pin low)
+	if (LL_GPIO_ReadInputPort(TIP_ACTIVE_GPIO_Port) & TIP_ACTIVE_Pin) {
+		tip_active = true;
+		if (last_active_setpoint != 0.0F) {
+			tip_pid.setpoint_degC = last_active_setpoint;
+			last_active_setpoint = 0.0F;
+		}
+	} else {
+		if (last_active_setpoint == 0.0F) {
+			last_active_setpoint = tip_pid.setpoint_degC;
+		}
+		tip_pid.setpoint_degC = TIP_SLEEP_SETPOINT_DEGC;
+		tip_active = false;
 	}
 }
 
@@ -102,5 +129,9 @@ void user_systick_handler(void) {
 
 	if (HAL_GetTick() % TASK_PERIOD_REFRESH_DISPLAY_MS == 0) {
 		refresh_display_flag = true;
+	}
+
+	if (HAL_GetTick() % TASK_PERIOD_CHECK_TIP_ACTIVE_MS == 0) {
+		check_tip_active_flag = true;
 	}
 }

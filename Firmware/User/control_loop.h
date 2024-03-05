@@ -17,7 +17,8 @@
 typedef struct PIDData {
 	const float k_p, k_i;
 	const float period_s;  // Period between evalutions of PID loop
-	const float pid_window_degC;  // Temperature range (plus/minus about setpoint) in which the PID loop is active
+	const float pid_window_positive_degC;  // Temperature above the setpoint when PID is disabled
+	const float pid_window_negative_degC;  // Temperature below the setpoint when PID is disabled
 
 	volatile float setpoint_degC;
 	float integral_degCs;

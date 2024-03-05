@@ -41,7 +41,8 @@ PIDData tip_pid = {
 	.k_p = 0.0855F,
 	.k_i = 0.0770F,
 
-	.pid_window_degC = 100.0F,
+	.pid_window_positive_degC = 15.0F,
+	.pid_window_negative_degC = 50.0F,
 	.period_s = (float) TASK_PERIOD_CTRL_LOOP_MS / 1000.0F,
 
 	// Non-const data
@@ -104,13 +105,16 @@ float run_pid(PIDData* data, float temp_degC) {
 	float duty_cycle;
 
 	// Fix duty_cycle if outside PID window
-	if (error_degC > data->pid_window_degC) {
+	if (error_degC > data->pid_window_negative_degC) {
 		duty_cycle = 1.0F;
 		data->integral_degCs = 0.0F;
-	} else if (error_degC < -data->pid_window_degC) {
+	} else if (error_degC < -data->pid_window_positive_degC) {
 		duty_cycle = 0.0F;
 		data->integral_degCs = 0.0F;
-	} else {  // Use PID control if abs(temp_degC) < pid_window_degC
+	}
+	// Else, use PID control if
+	// pid_window_negative_degC < error_degC < -pid_window_positive_degC
+	else {
 		// Run PI loop
 		data->integral_degCs += error_degC * data->period_s;
 		duty_cycle = data->k_p*error_degC + data->k_i*data->integral_degCs;

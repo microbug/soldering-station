@@ -34,6 +34,8 @@ void refresh_display(void) {
 	if (tip_temperature_degC > NO_TOOL_TEMPERATURE_DEGC) {
 		tool = false;
 		strcat(line, "No tool");
+	} else if (!tip_active) {
+		strcat(line, "Sleep");
 	} else if (error > -READY_WINDOW_DEGC && error < READY_WINDOW_DEGC) {
 		strcat(line, "Ready");
 	} else if (error < -READY_WINDOW_DEGC) {
