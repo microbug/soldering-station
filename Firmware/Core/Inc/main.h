@@ -30,6 +30,8 @@ extern "C" {
 /* Includes ------------------------------------------------------------------*/
 #include "stm32l0xx_hal.h"
 
+#include "stm32l0xx_ll_adc.h"
+#include "stm32l0xx_ll_dma.h"
 #include "stm32l0xx_ll_crs.h"
 #include "stm32l0xx_ll_rcc.h"
 #include "stm32l0xx_ll_bus.h"
@@ -38,7 +40,6 @@ extern "C" {
 #include "stm32l0xx_ll_cortex.h"
 #include "stm32l0xx_ll_utils.h"
 #include "stm32l0xx_ll_pwr.h"
-#include "stm32l0xx_ll_dma.h"
 #include "stm32l0xx_ll_gpio.h"
 
 /* Private includes ----------------------------------------------------------*/

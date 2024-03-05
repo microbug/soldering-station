@@ -55,15 +55,43 @@ void user_main(void) {
 #endif
 	HAL_TIM_Base_Start(&htim2);
 	HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_1);
-	HAL_TIM_OC_Start_IT(&htim2, TIM_CHANNEL_2);
-	__HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_1, 0);
+	__HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_1, 0);  // Disable tip heater
+
+	if (!LL_ADC_IsEnabled(ADC1)) {
+		uint32_t adc_dma_settings_backup = LL_ADC_REG_GetDMATransfer(ADC1);
+		LL_ADC_REG_SetDMATransfer(ADC1, LL_ADC_REG_DMA_TRANSFER_NONE);
+		LL_ADC_StartCalibration(ADC1);
+		while (LL_ADC_IsCalibrationOnGoing(ADC1) != 0);
+		LL_ADC_REG_SetDMATransfer(ADC1, adc_dma_settings_backup);
+	}
+
+	// Must set up DMA after calibration (otherwise cal data will be transferred)
+	LL_DMA_EnableIT_TC(DMA1, LL_DMA_CHANNEL_1);
+	LL_DMA_EnableIT_TE(DMA1, LL_DMA_CHANNEL_1);
+	LL_DMA_ConfigAddresses(DMA1, LL_DMA_CHANNEL_1,
+		LL_ADC_DMA_GetRegAddr(ADC1, LL_ADC_DMA_REG_REGULAR_DATA),
+		(uint32_t)&adc_dma_buf, LL_DMA_DIRECTION_PERIPH_TO_MEMORY);
+	LL_DMA_SetDataLength(DMA1, LL_DMA_CHANNEL_1, 1);
+	LL_DMA_SetPeriphRequest(DMA1, LL_DMA_CHANNEL_1, LL_DMA_REQUEST_0);
+
+	LL_DMA_EnableChannel(DMA1, LL_DMA_CHANNEL_1);
+	LL_ADC_Enable(ADC1);
+	while (!LL_ADC_IsActiveFlag_ADRDY(ADC1));
+
+	if (!LL_ADC_IsEnabled(ADC1))
+		Error_Handler();
+
+	if (LL_ADC_IsDisableOngoing(ADC1))
+		Error_Handler();
+	if (LL_ADC_REG_IsConversionOngoing(ADC1))
+		Error_Handler();
+
+//	LL_ADC_REG_StartConversion(ADC1);
+//	LL_ADC_REG_StartConversion(ADC1);
+
+
 	__HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_2, 600);
-
-	// Must be run before HAL_ADC_Start()
-	HAL_ADCEx_Calibration_Start(&hadc, ADC_SINGLE_ENDED);
-	HAL_Delay(1);  // Must allow 2 ADC clock cycles before starting
-
-	control_loop_init();
+	HAL_TIM_OC_Start_IT(&htim2, TIM_CHANNEL_2);  // Starts control loop
 
 	while (true) {
 		if (buttons_process_flag) {
@@ -109,7 +137,35 @@ void check_tip_active(void) {
  * current measurement can be performed at the correct time.
  */
 void HAL_TIM_OC_DelayElapsedCallback(TIM_HandleTypeDef *htim) {
-	HAL_ADC_Start_DMA(&hadc, (uint32_t*)&adc_dma_buf, 1);
+	if (!LL_ADC_IsEnabled(ADC1))
+		Error_Handler();
+	if (LL_ADC_IsDisableOngoing(ADC1))
+		Error_Handler();
+	if (LL_ADC_REG_IsConversionOngoing(ADC1))
+		return;
+
+	if ((LL_ADC_IsEnabled(ADC1) == 1) &&
+	    (LL_ADC_IsDisableOngoing(ADC1) == 0) &&
+	    (LL_ADC_REG_IsConversionOngoing(ADC1) == 0)) {
+
+		if (LL_DMA_IsActiveFlag_TE1(DMA1)) {
+			Error_Handler();
+		}
+
+		LL_ADC_ClearFlag_ADRDY(ADC1);
+		LL_ADC_ClearFlag_EOC(ADC1);
+		LL_ADC_ClearFlag_EOS(ADC1);
+		LL_ADC_ClearFlag_OVR(ADC1);
+		LL_ADC_ClearFlag_EOSMP(ADC1);
+
+		LL_DMA_DisableChannel(DMA1, LL_DMA_CHANNEL_1);
+		LL_DMA_SetDataLength(DMA1, LL_DMA_CHANNEL_1, 1);
+
+		LL_DMA_EnableChannel(DMA1, LL_DMA_CHANNEL_1);
+	    LL_ADC_REG_StartConversion(ADC1);
+	} else {
+		Error_Handler();
+	}
 }
 
 /**

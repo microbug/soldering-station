@@ -52,12 +52,6 @@ PIDData tip_pid = {
 };
 
 
-
-void control_loop_init(void) {
-	HAL_ADC_Start_DMA(&hadc, (uint32_t*)&adc_dma_buf, 1);
-}
-
-
 void control_loop_run(void) {
 
 	__disable_irq();  // Critical section
@@ -87,7 +81,7 @@ void control_loop_run(void) {
 }
 
 
-void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc) {
+void adc_dma_transfer_complete_callback(void) {
 	__disable_irq();  // Critical section
 	accumulator += (adc_dma_buf & 0xFFF);
 	counter++;
