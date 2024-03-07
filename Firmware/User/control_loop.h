@@ -1,10 +1,3 @@
-/*
- * control_loop.h
- *
- *  Created on: Jan 21, 2024
- *      Author: richard
- */
-
 #ifndef CONTROL_LOOP_H_
 #define CONTROL_LOOP_H_
 
@@ -38,6 +31,7 @@ void control_loop_init(void);
 void control_loop_run(void);
 float run_pid(PIDData* data, float temp_degC);
 void adc_dma_transfer_complete_callback(void);
+float get_adc_V(void);
 
 extern volatile float tip_temperature_degC;
 extern PIDData tip_pid;

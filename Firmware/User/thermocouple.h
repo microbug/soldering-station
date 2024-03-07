@@ -1,10 +1,3 @@
-/*
- * thermocouple.h
- *
- *  Created on: Jan 17, 2024
- *      Author: richard
- */
-
 #ifndef THERMOCOUPLE_H_
 #define THERMOCOUPLE_H_
 

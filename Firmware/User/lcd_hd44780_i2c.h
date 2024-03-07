@@ -1,7 +1,5 @@
 /**
  * Original version: MIT license, by Nikita Bulaev, 2017.
- * This library version has been modified to use the blocking HAL_Delay function
- * instead of FreeRTOS.
  */
 
 #ifndef LCD_HD44780_I2C_H
@@ -104,6 +102,12 @@ void lcdSetCursorPosition(uint8_t line, uint8_t row);
 void lcdPrintStr(char * data);
 void lcdPrintChar(uint8_t data);
 void lcdLoadCustomChar(uint8_t cell, uint8_t * charMap);
+
+// Accurate within 20%
+#define DELAY_US(t) do { \
+	for (uint32_t delay_i = 0; delay_i < (t)*4; delay_i++) \
+		__asm__("NOP"); \
+	} while (0);
 
 /* C++ detection */
 #ifdef __cplusplus

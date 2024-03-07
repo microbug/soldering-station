@@ -1,10 +1,3 @@
-/*
- * control_loop.c
- *
- *  Created on: Jan 21, 2024
- *      Author: richard
- */
-
 #include "adc.h"
 #include "tim.h"
 
@@ -18,9 +11,6 @@
 #include <string.h>
 #include <stdlib.h>
 #endif
-
-// Accurate within 20%
-#define DELAY_US(t) do {for(uint32_t delay_i = 0; delay_i < (t)*4; delay_i++) __asm__("NOP");} while (0);
 
 typedef enum {
 	OC_HIGH_PERIOD,
@@ -53,20 +43,8 @@ PIDData tip_pid = {
 
 
 void control_loop_run(void) {
-
-	__disable_irq();  // Critical section
-	uint32_t acc_copy = accumulator;
-	uint32_t count_copy = counter;
-	accumulator = 0;
-	counter = 0;
-	__enable_irq();
-
-	LL_GPIO_SetOutputPin(OC_TEST_GPIO_Port, OC_TEST_Pin);
-	float adc_code = (float) acc_copy / (float) count_copy;
-	float result_V = adc_code * 3.3F / 4095.0F;
-	result_V /= TC_AMP_GAIN;  // Remove amplifier gain
-
-	tip_temperature_degC = tc_voltage_to_temperature(result_V);
+	float adc_V = get_adc_V();
+	tip_temperature_degC = tc_voltage_to_temperature(adc_V);
 
 	float duty_cycle = run_pid(&tip_pid, tip_temperature_degC);
 
@@ -78,6 +56,27 @@ void control_loop_run(void) {
 	#endif
 
 	__HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_1, duty_cycle * TIP_PWM_MAX);
+}
+
+
+/**
+ * Gets the voltage at the ADC (using the accumulator and counter). Resets the accumulator and counter,
+ * and returns the voltage.
+ */
+float get_adc_V(void) {
+	// Take a copy of current accumulator and count, then reset
+	__disable_irq();  // Critical section
+	uint32_t acc_copy = accumulator;
+	uint32_t count_copy = counter;
+	accumulator = 0;
+	counter = 0;
+	__enable_irq();
+
+	float adc_code = (float) acc_copy / (float) count_copy;
+	float result_V = adc_code * 3.3F / 4095.0F;
+	result_V /= TC_AMP_GAIN;  // Remove amplifier gain
+
+	return result_V;
 }
 
 

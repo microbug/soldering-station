@@ -28,6 +28,7 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "user_main.h"
+#include "lcd_hd44780_i2c.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -170,14 +171,15 @@ void Error_Handler(void)
 {
   /* USER CODE BEGIN Error_Handler_Debug */
 
+	__disable_irq();
 	// Disable tip PWM
 	__HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_1, 0);
 
-  /* User can add his own implementation to report the HAL error return state */
-  __disable_irq();
-  while (1)
-  {
-  }
+	lcdSetCursorPosition(0, 0);
+	lcdPrintStr("ErrorHandler:   ");
+
+	while (1);
+
   /* USER CODE END Error_Handler_Debug */
 }
 

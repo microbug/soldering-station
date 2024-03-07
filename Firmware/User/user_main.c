@@ -12,6 +12,7 @@
 #include "thermocouple.h"
 #include "control_loop.h"
 #include "ui.h"
+#include "util.h"
 
 
 
@@ -50,6 +51,11 @@ volatile bool tip_active = false;
 void user_main(void) {
 	lcdInit(&hi2c1, 0x27, 2, 16);
 
+	volatile uint32_t a = *(uint32_t*)DATA_EEPROM_BASE;
+//	HAL_FLASHEx_DATAEEPROM_Unlock();
+//	HAL_FLASHEx_DATAEEPROM_Program(FLASH_TYPEPROGRAMDATA_WORD, DATA_EEPROM_BASE, 0xDEADCAFE);
+//	HAL_FLASHEx_DATAEEPROM_Lock();
+
 #ifdef REPORT_TEMPERATURE_LPUART
 	LL_LPUART_Enable(LPUART1);
 #endif
@@ -78,17 +84,11 @@ void user_main(void) {
 	LL_ADC_Enable(ADC1);
 	while (!LL_ADC_IsActiveFlag_ADRDY(ADC1));
 
-	if (!LL_ADC_IsEnabled(ADC1))
-		Error_Handler();
-
-	if (LL_ADC_IsDisableOngoing(ADC1))
-		Error_Handler();
-	if (LL_ADC_REG_IsConversionOngoing(ADC1))
-		Error_Handler();
-
-//	LL_ADC_REG_StartConversion(ADC1);
-//	LL_ADC_REG_StartConversion(ADC1);
-
+	if (!LL_ADC_IsEnabled(ADC1)
+			|| LL_ADC_IsDisableOngoing(ADC1)
+			|| LL_ADC_REG_IsConversionOngoing(ADC1)) {
+		fatal_error("ADC setup err");
+	}
 
 	__HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_2, 600);
 	HAL_TIM_OC_Start_IT(&htim2, TIM_CHANNEL_2);  // Starts control loop
@@ -137,35 +137,12 @@ void check_tip_active(void) {
  * current measurement can be performed at the correct time.
  */
 void HAL_TIM_OC_DelayElapsedCallback(TIM_HandleTypeDef *htim) {
-	if (!LL_ADC_IsEnabled(ADC1))
-		Error_Handler();
-	if (LL_ADC_IsDisableOngoing(ADC1))
-		Error_Handler();
-	if (LL_ADC_REG_IsConversionOngoing(ADC1))
-		return;
+	LL_DMA_DisableChannel(DMA1, LL_DMA_CHANNEL_1);
+	// CDNTR is decremented every DMA transfer, and cannot be set while the channel is enabled.
+	LL_DMA_SetDataLength(DMA1, LL_DMA_CHANNEL_1, 1);
+	LL_DMA_EnableChannel(DMA1, LL_DMA_CHANNEL_1);
 
-	if ((LL_ADC_IsEnabled(ADC1) == 1) &&
-	    (LL_ADC_IsDisableOngoing(ADC1) == 0) &&
-	    (LL_ADC_REG_IsConversionOngoing(ADC1) == 0)) {
-
-		if (LL_DMA_IsActiveFlag_TE1(DMA1)) {
-			Error_Handler();
-		}
-
-		LL_ADC_ClearFlag_ADRDY(ADC1);
-		LL_ADC_ClearFlag_EOC(ADC1);
-		LL_ADC_ClearFlag_EOS(ADC1);
-		LL_ADC_ClearFlag_OVR(ADC1);
-		LL_ADC_ClearFlag_EOSMP(ADC1);
-
-		LL_DMA_DisableChannel(DMA1, LL_DMA_CHANNEL_1);
-		LL_DMA_SetDataLength(DMA1, LL_DMA_CHANNEL_1, 1);
-
-		LL_DMA_EnableChannel(DMA1, LL_DMA_CHANNEL_1);
-	    LL_ADC_REG_StartConversion(ADC1);
-	} else {
-		Error_Handler();
-	}
+	LL_ADC_REG_StartConversion(ADC1);
 }
 
 /**

@@ -79,7 +79,10 @@ void refresh_display(void) {
 }
 
 
-// Callback for button press interrupts
+/**
+ * Callback for button pin interrupts. This sets a flag for the debounce handler to start timing. When the timer
+ * completes, it will check if the button is still pressed, and if so issue another flag.
+ */
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
 	switch (GPIO_Pin) {
 	case BTN_ENTER_Pin:
@@ -112,6 +115,7 @@ void buttons_process_debounced(void) {
 	bool button_pressed_first_time = button_debounced != BTN_NONE && last_hold_event == 0;
 	bool button_held = button_debounced == last_button && button_pressed(button_debounced);
 
+	// Issue more events every BTN_REPEAT_PERIOD_MS if the button is held down
 	if (button_pressed_first_time || button_held) {
 		if (HAL_GetTick() - last_hold_event >= BTN_REPEAT_PERIOD_MS) {
 			last_hold_event = HAL_GetTick();
@@ -139,6 +143,9 @@ void buttons_process_debounced(void) {
 	}
 }
 
+/**
+ * Called when a 'button up' event is issued (button pressed or held).
+ */
 void button_event_up(void) {
 	if (tip_pid.setpoint_degC < TIP_MAX_TEMP_DEGC) {
 		__disable_irq();
@@ -147,6 +154,9 @@ void button_event_up(void) {
 	}
 }
 
+/**
+ * Called when a 'button down' event is issued (button pressed or held).
+ */
 void button_event_down(void) {
 	if (tip_pid.setpoint_degC > TIP_MIN_TEMP_DEGC) {
 		__disable_irq();
@@ -178,8 +188,9 @@ void button_debounce_handler(void) {
 	}
 }
 
+
 /**
- * Returns true if `button` is pressed, false otherwise.
+ * Checks GPIO input to determine whether a given button is pressed.
  */
 bool button_pressed(Button button) {
 	uint32_t button_pin;

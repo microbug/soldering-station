@@ -1,11 +1,3 @@
-/*
- * thermocouple.c
- *
- *  Created on: Sep 27, 2020
- *      Author: richard
- */
-
-
 #include "thermocouple.h"
 #include <stdint.h>
 

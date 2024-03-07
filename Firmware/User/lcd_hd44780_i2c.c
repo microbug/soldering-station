@@ -1,7 +1,7 @@
 /**
  * Original version: MIT license, by Nikita Bulaev, 2017.
- * This library version has been modified to use the blocking HAL_Delay function
- * and blocking HAL I2C library instead of FreeRTOS and DMA.
+ * This library has been modified to use a blocking counter delay function that does not depend on SysTick or
+ * any hardware interrupts. It also uses the blocking HAL I2C library instead of FreeRTOS and DMA.
  */
 
 /*
@@ -49,10 +49,10 @@ void lcdInit(I2C_HandleTypeDef *hi2c, uint8_t address, uint8_t lines, uint8_t co
 
         if (i == 2) {
             // For the last cycle delay is less then 1 ms (100us by datasheet)
-        	HAL_Delay(1);
+        	DELAY_US(200);
         } else {
             // For first 2 cycles delay is less then 5ms (4100us by datasheet)
-            HAL_Delay(5);
+            DELAY_US(4500);
         }
     }
 
@@ -112,7 +112,7 @@ void lcdCommand(LCDCommands command, LCDParamsActions action) {
                     lcdData = LCD_BIT_DISP_CLEAR;
 
                     lcdWriteByte((uint8_t)0x00, &lcdData);
-					HAL_Delay(2);
+					DELAY_US(2400);
 					return;
 
 
@@ -120,7 +120,7 @@ void lcdCommand(LCDCommands command, LCDParamsActions action) {
                     lcdData = LCD_BIT_CURSOR_HOME;
 
                     lcdWriteByte((uint8_t)0x00, &lcdData);
-					HAL_Delay(2);
+					DELAY_US(2400);
 					return;
 
 

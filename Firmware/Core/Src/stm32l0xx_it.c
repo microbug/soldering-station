@@ -25,6 +25,7 @@
 /* USER CODE BEGIN Includes */
 #include "user_main.h"
 #include "control_loop.h"
+#include "util.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -207,10 +208,8 @@ void DMA1_Channel1_IRQHandler(void)
 	    adc_dma_transfer_complete_callback();
 	}
 	if (LL_DMA_IsActiveFlag_TE1(DMA1)) {
-		Error_Handler();
+		fatal_error("DMA Transfer Err");
 	}
-	LL_DMA_ClearFlag_GI1(DMA1);
-	LL_DMA_ClearFlag_TE1(DMA1);
   /* USER CODE END DMA1_Channel1_IRQn 0 */
 
   /* USER CODE BEGIN DMA1_Channel1_IRQn 1 */
