@@ -4,6 +4,7 @@
 #include "user_main.h"
 #include "control_loop.h"
 #include "thermocouple.h"
+#include "ui.h"
 #include "util.h"
 
 #ifdef REPORT_TEMPERATURE_LPUART
@@ -21,7 +22,7 @@ volatile uint16_t adc_dma_buf;
 volatile uint32_t accumulator = 0;
 volatile uint32_t counter = 0;
 
-volatile float tip_temperature_degC = 0.0F;
+volatile float tip_temperature_degC = NO_TOOL_TEMPERATURE_DEGC + 1.0F;
 
 // Tuned using Ziegler-Nichols method
 // Ku = 0.19, Tu = 1.33
@@ -35,18 +36,25 @@ PIDData tip_pid = {
 	.pid_window_negative_degC = 50.0F,
 	.period_s = (float) TASK_PERIOD_CTRL_LOOP_MS / 1000.0F,
 
-	// Non-const data
-	.setpoint_degC = TIP_INITIAL_SETPOINT_DEGC,
-	// Must initialise these to 0
+	// Non-const data. Initialise to 0.
+	.setpoint_degC = 0.0F,
 	.integral_degCs = 0.0F,
 };
 
 
 void control_loop_run(void) {
+	static bool first_run = true;
+	if (first_run) {
+		// Retrieve setpoint from EEPROM
+		tip_pid.setpoint_degC = SAVED_SETPOINT;
+		first_run = false;
+	}
+
 	float adc_V = get_adc_V();
 	tip_temperature_degC = tc_voltage_to_temperature(adc_V);
 
-	float duty_cycle = run_pid(&tip_pid, tip_temperature_degC);
+	bool sleep = !tip_active || menu_sleep;
+	float duty_cycle = run_pid(&tip_pid, tip_temperature_degC, sleep);
 
 	#ifdef REPORT_TEMPERATURE_LPUART
 		char buf[5];
@@ -91,10 +99,17 @@ void adc_dma_transfer_complete_callback(void) {
 /**
  * Evaluates a PID loop with constants and state in `data`.
  *
+ * sleep: if true, the setpoint is forced to TIP_SLEEP_SETPOINT_DEGC. Otherwise, the setpoint in data is used.
+ *
  * Returns a float representing the duty cycle output. This value is capped between 0.0F and 1.0F.
  */
-float run_pid(PIDData* data, float temp_degC) {
-	float error_degC = data->setpoint_degC - temp_degC;
+float run_pid(PIDData* data, float temp_degC, bool sleep) {
+	float error_degC;
+	if (sleep) {
+		error_degC = (float) TIP_SLEEP_SETPOINT_DEGC - temp_degC;
+	} else {
+		error_degC = data->setpoint_degC - temp_degC;
+	}
 	float duty_cycle;
 
 	// Fix duty_cycle if outside PID window

@@ -16,7 +16,7 @@
 // Degrees about the setpoint where 'Ready' will be displayed on the LCD
 #define READY_WINDOW_DEGC  15.0F
 #define BTN_DEBOUNCE_CYCLES 40  // Cycles of TIM2 to check button again for debounce purposes
-#define BTN_REPEAT_PERIOD_MS 250 // When holding a button, new presses are registered every <this> ms
+#define BTN_REPEAT_PERIOD_MS 100 // When holding a button, new presses are registered every <this> ms
 #define BTN_TEMPERATURE_STEP 10  // Each up/down press increases/decreases temperature by this amount
 
 typedef enum {
@@ -31,6 +31,7 @@ void button_debounce_handler(void);
 void buttons_process_debounced(void);
 void button_event_up(void);
 void button_event_down(void);
+void button_event_enter(void);
 bool button_pressed(Button button);
 void string_pad(char* str, size_t n);
 void refresh_display(void);

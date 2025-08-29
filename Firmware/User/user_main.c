@@ -45,16 +45,20 @@
 volatile bool buttons_process_flag = false;
 volatile bool refresh_display_flag = false;
 volatile bool check_tip_active_flag = false;
+volatile bool save_setpoint_flag = false;
 
-volatile bool tip_active = false;
+bool tip_active = false;
+bool menu_sleep = false;
 
 void user_main(void) {
-	lcdInit(&hi2c1, 0x27, 2, 16);
+	if (SAVED_SETPOINT > TIP_MAX_TEMP_DEGC) {
+		// Restore setpoint to 0
+		HAL_FLASHEx_DATAEEPROM_Unlock();
+		HAL_FLASHEx_DATAEEPROM_Program(FLASH_TYPEPROGRAMDATA_WORD, DATA_EEPROM_BASE, 0);
+		HAL_FLASHEx_DATAEEPROM_Lock();
+	}
 
-	volatile uint32_t a = *(uint32_t*)DATA_EEPROM_BASE;
-//	HAL_FLASHEx_DATAEEPROM_Unlock();
-//	HAL_FLASHEx_DATAEEPROM_Program(FLASH_TYPEPROGRAMDATA_WORD, DATA_EEPROM_BASE, 0xDEADCAFE);
-//	HAL_FLASHEx_DATAEEPROM_Lock();
+	lcdInit(&hi2c1, 0x27, 2, 16);
 
 #ifdef REPORT_TEMPERATURE_LPUART
 	LL_LPUART_Enable(LPUART1);
@@ -108,10 +112,21 @@ void user_main(void) {
 			check_tip_active_flag = false;
 		}
 
+		if (save_setpoint_flag) {
+			save_setpoint();
+			save_setpoint_flag = false;
+		}
+
 		HAL_Delay(1);
 	}
 }
 
+
+/**
+ * Checks whether the tip active pin is grounded (tip in stand) or high (tip out of stand).
+ *
+ * Stores result in global variable tip_active.
+ */
 void check_tip_active(void) {
 	static float last_active_setpoint;
 
@@ -166,5 +181,18 @@ void user_systick_handler(void) {
 
 	if (HAL_GetTick() % TASK_PERIOD_CHECK_TIP_ACTIVE_MS == 0) {
 		check_tip_active_flag = true;
+	}
+
+	if (HAL_GetTick() % TASK_PERIOD_SAVE_SETPOINT == 0) {
+		save_setpoint_flag = true;
+	}
+}
+
+
+void save_setpoint(void) {
+	if (tip_pid.setpoint_degC != SAVED_SETPOINT) {
+		HAL_FLASHEx_DATAEEPROM_Unlock();
+		HAL_FLASHEx_DATAEEPROM_Program(FLASH_TYPEPROGRAMDATA_WORD, DATA_EEPROM_BASE, tip_pid.setpoint_degC);
+		HAL_FLASHEx_DATAEEPROM_Lock();
 	}
 }

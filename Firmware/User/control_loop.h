@@ -22,14 +22,13 @@ typedef struct PIDData {
 } PIDData;
 
 #define TIP_PWM_MAX 499  // Max high cycles (zero indexed) of PWM counter
-#define TIP_INITIAL_SETPOINT_DEGC 150
 
-// If defined, temperature is reported on LPUART1 PA4 9600 baud
+// If defined, temperature is reported on LPUART1 (PA4, 9600 baud)
 //#define REPORT_TEMPERATURE_LPUART
 
 void control_loop_init(void);
 void control_loop_run(void);
-float run_pid(PIDData* data, float temp_degC);
+float run_pid(PIDData* data, float temp_degC, bool sleep);
 void adc_dma_transfer_complete_callback(void);
 float get_adc_V(void);
 

@@ -34,20 +34,26 @@ void refresh_display(void) {
 	if (tip_temperature_degC > NO_TOOL_TEMPERATURE_DEGC) {
 		tool = false;
 		strcat(line, "No tool");
-	} else if (!tip_active) {
-		strcat(line, "Sleep");
+	} else if (menu_sleep || !tip_active) {
+		if (menu_sleep && !tip_active) {
+			strcat(line, "Sleep [menu|tip]");
+		} else if (!tip_active) {
+			strcat(line, "Sleep [tip]");
+		} else {
+			strcat(line, "Sleep [menu]");
+		}
 	} else if (error > -READY_WINDOW_DEGC && error < READY_WINDOW_DEGC) {
-		strcat(line, "Ready");
+		strcat(line, "Active: good T");
 	} else if (error < -READY_WINDOW_DEGC) {
-		strcat(line, "Heating");
+		strcat(line, "Active: under T");
 	} else {
-		strcat(line, "Over temp!");
+		strcat(line, "Active: over T!");
 	}
 	string_pad(line, 16);
 	lcdPrintStr(line);
 
-	// Bottom row LCD format:   "T:YYY/ZZZ  P:YYY"
-	// When no tool is present: "T:-/ZZZ    P:-  "
+	// Bottom row LCD format:   "T:XXX/YYY  P:ZZZ"
+	// When no tool is present: "T:-/YYY    P:-  "
 	line[0] = 0;
 	strcat(line, "T:");
 	char num[5];  // Buffer for itoa
@@ -113,7 +119,8 @@ void buttons_process_debounced(void) {
 	static Button last_button = BTN_NONE;
 
 	bool button_pressed_first_time = button_debounced != BTN_NONE && last_hold_event == 0;
-	bool button_held = button_debounced == last_button && button_pressed(button_debounced);
+	bool button_held = (button_debounced == last_button) // Most recent button ISR was the same as the last time this function ran
+			&& button_pressed(button_debounced);  // and the most recent button ISR button is still being held
 
 	// Issue more events every BTN_REPEAT_PERIOD_MS if the button is held down
 	if (button_pressed_first_time || button_held) {
@@ -137,6 +144,10 @@ void buttons_process_debounced(void) {
 			button_event_down();
 			break;
 		case BTN_ENTER:
+			if (!button_held) {
+				button_event_enter();
+			}
+			break;
 		case BTN_MENU:
 		case BTN_NONE:
 			break;
@@ -163,6 +174,13 @@ void button_event_down(void) {
 		tip_pid.setpoint_degC -= BTN_TEMPERATURE_STEP;
 		__enable_irq();
 	}
+}
+
+/**
+ * Called when a 'button enter' event is issued (button pressed or held).
+ */
+void button_event_enter(void) {
+	menu_sleep = !menu_sleep;
 }
 
 
